@@ -1,0 +1,6 @@
+{
+  "name": "Deal Calculator",
+  "description": "Wholesale real estate deal calculator and analyzer with multi-strategy underwriting, offer ranges, seller net sheet, rehab scope, tear sheet export, and Google Drive cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
