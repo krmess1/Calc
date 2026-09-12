@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { money } from '../utils/calc';
 
 interface HoldingCostsProps {
   propertyTI: number;
   onTIChange: (ti: number) => void;
   months: number;
+  purchasePrice?: number;
   onHoldingChange: (monthlyHold: number, months: number) => void;
 }
 
@@ -12,15 +13,25 @@ export const HoldingCosts: React.FC<HoldingCostsProps> = ({
   propertyTI,
   onTIChange,
   months: initialMonths,
+  purchasePrice = 200000,
   onHoldingChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [loan, setLoan] = useState(150000);
+  const [loan, setLoan] = useState(purchasePrice > 0 ? Math.round(purchasePrice * 0.8) : 150000);
   const [rate, setRate] = useState(11);
   const [points, setPoints] = useState(2);
   const [months, setMonths] = useState(initialMonths || 6);
   const [util, setUtil] = useState(150);
   const [other, setOther] = useState(0);
+
+  // Sync loan with purchase price if loan is 0
+  useEffect(() => {
+    if (loan === 0 && purchasePrice > 0) {
+      const l = Math.round(purchasePrice * 0.8);
+      setLoan(l);
+      updateCarry(l, rate, months, propertyTI, util, other);
+    }
+  }, [purchasePrice]);
 
   const monthlyInterest = (loan * (rate / 100)) / 12;
   const monthlyCarry = monthlyInterest + propertyTI + util + other;
@@ -56,7 +67,7 @@ export const HoldingCosts: React.FC<HoldingCostsProps> = ({
             The costs that quietly eat a flip. Every change here updates Fix &amp; Flip holding costs and property taxes <b>live</b> in real time.
           </div>
           <div className="mini-row">
-            <label>Loan amount</label>
+            <label>Loan amount (Hard money)</label>
             <input
               type="number"
               value={loan || ''}
@@ -69,6 +80,30 @@ export const HoldingCosts: React.FC<HoldingCostsProps> = ({
               }}
             />
           </div>
+          {purchasePrice > 0 && (
+            <div style={{ textAlign: 'right', marginBottom: '8px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const l = Math.round(purchasePrice * 0.8);
+                  setLoan(l);
+                  updateCarry(l, rate, months, propertyTI, util, other);
+                }}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  borderRadius: '4px',
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                🔄 Auto-Set Loan to 80% Purchase ({money(purchasePrice * 0.8)})
+              </button>
+            </div>
+          )}
           <div className="mini-row">
             <label>Lender rate %</label>
             <input

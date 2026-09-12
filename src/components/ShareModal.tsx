@@ -84,7 +84,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const r = atDSCR(dscr.purchase, dscr);
       b.title = 'DSCR Rental Hold';
       b.rows = [
-        ['Purchase price', money(dscr.purchase)],
+        ['Buyer entry cash (Cash to close)', money(r.cashIn)],
+        ['Total purchase basis', money(dscr.purchase + dscr.fee)],
+        ['Contract purchase price', money(dscr.purchase)],
+        ['Wholesale assignment fee', money(dscr.fee)],
         ['Down payment (' + dscr.down + '%)', money((dscr.purchase * dscr.down) / 100)],
         ['Rate / term', dscr.rate + '% / ' + dscr.term + ' yr'],
         ['Gross rent', money(dscr.rent) + '/mo'],
@@ -95,7 +98,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         ['Monthly cash flow', money(r.cf)],
         ['DSCR', r.dscr.toFixed(2)],
         ['Cash-on-cash', r.coc.toFixed(1) + '%'],
-        ['Cash required', money(r.cashIn)],
       ];
       if (offers.dscr.anchor) b.offer.push(['Anchor offer', money(offers.dscr.anchor)]);
       if (offers.dscr.target) b.offer.push(['Target offer', money(offers.dscr.target)]);
@@ -104,7 +106,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const r2 = atSF(sf.purchase, sf);
       b.title = 'Seller Finance';
       b.rows = [
-        ['Purchase price', money(sf.purchase)],
+        ['Buyer entry cash (Cash to close)', money(r2.cashIn)],
+        ['Total purchase basis', money(sf.purchase + sf.fee)],
+        ['Contract purchase price', money(sf.purchase)],
+        ['Wholesale assignment fee', money(sf.fee)],
         ['Down payment (' + sf.down + '%)', money((sf.purchase * sf.down) / 100)],
         ['Seller carries', money(sf.purchase - (sf.purchase * sf.down) / 100)],
         ['Interest rate', sf.rate + '%'],
@@ -112,7 +117,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         ['Gross rent', money(sf.rent) + '/mo'],
         ['Occupancy used', sf.occ + '%'],
         ['Monthly payment', money(r2.pay)],
-        ['Monthly cash flow', money(r2.cf)],
+        ['Monthly net cash flow', money(r2.cf)],
+        ['Cash-on-cash return', r2.coc.toFixed(1) + '%'],
+        ['Buyer exit protection', 'Miss 2 months deed-in-lieu walkaway clause'],
         ['Balloon balance', money(r2.bal)],
         ['Projected value at balloon', money(r2.fv)],
         ['75% refi covers balloon', r2.refiOk ? 'Yes' : 'No'],
@@ -124,18 +131,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const r3 = atST(st);
       b.title = 'Subject-To';
       b.rows = [
-        ['Property value', money(st.value)],
-        ['Loan assumed', money(st.mtg)],
-        ['Equity captured', money(r3.equity)],
-        ['Their rate', st.rate + '%'],
-        ['Months remaining', `${st.months}`],
+        ['Buyer entry cash (Cash to close)', money(r3.cashIn)],
+        ['Total property value', money(st.value)],
         ['Cash to seller', money(st.cash)],
+        ['Wholesale assignment fee', money(st.fee)],
+        ['Existing loan assumed', money(st.mtg)],
+        ['Equity captured', money(r3.equity)],
+        ['Their interest rate', st.rate + '%'],
+        ['Months remaining', `${st.months}`],
         ['Gross rent', money(st.rent) + '/mo'],
         ['Occupancy used', st.occ + '%'],
         ['Payment', money(r3.pay) + '/mo'],
         ['Monthly cash flow', money(r3.cf)],
         ['Cash-on-cash', r3.coc.toFixed(1) + '%'],
-        ['Total cash to enter', money(r3.cashIn)],
       ];
       if (offers.st.anchor) b.offer.push(['Anchor cash to seller', money(offers.st.anchor)]);
       if (offers.st.target) b.offer.push(['Target cash to seller', money(offers.st.target)]);
@@ -144,11 +152,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const r4 = atFF(ff.purchase, ff);
       b.title = 'Fix & Flip';
       b.rows = [
-        ['Purchase price', money(ff.purchase)],
+        ['Buyer entry price (To close deal)', money(ff.purchase + ff.fee)],
+        ['Total all-in project basis', money(r4.invested)],
+        ['After repair value (ARV)', money(ff.arv)],
+        ['Purchase contract price', money(ff.purchase)],
+        ['Wholesale assignment fee', money(ff.fee)],
         ['Rehab budget', money(ff.rehab)],
-        ['After repair value', money(ff.arv)],
         ['Holding (' + ff.months + ' mo @ ' + money(ff.hold) + ')', money(r4.holding)],
-        ['Total invested', money(r4.invested)],
         ['Realtor (' + ff.realtor + '%)', money(r4.realtor)],
         ['Closing (' + ff.closing + '%)', money(r4.closing)],
         ['Net profit', money(r4.profit)],

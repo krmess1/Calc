@@ -8,6 +8,7 @@ interface SellerNetSheetProps {
   liens: number;
   closeP: number;
   credits: number;
+  stMortgageBalance?: number;
   onUpdate: (field: 'netPayoff' | 'netLiens' | 'netClosePct' | 'netCredits', value: number) => void;
 }
 
@@ -17,12 +18,14 @@ export const SellerNetSheet: React.FC<SellerNetSheetProps> = ({
   liens,
   closeP,
   credits,
+  stMortgageBalance = 0,
   onUpdate,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const effectivePayoff = payoff === 0 && stMortgageBalance > 0 ? stMortgageBalance : payoff;
   const closing = (contractPrice * closeP) / 100;
-  const net = contractPrice - payoff - liens - closing - credits;
+  const net = contractPrice - effectivePayoff - liens - closing - credits;
 
   return (
     <div className="tool">
@@ -42,12 +45,32 @@ export const SellerNetSheet: React.FC<SellerNetSheetProps> = ({
             <label>Mortgage payoff (Live Synced)</label>
             <input
               type="number"
-              value={payoff || ''}
+              value={effectivePayoff || ''}
               step={1000}
               placeholder="0"
               onChange={(e) => onUpdate('netPayoff', parseFloat(e.target.value) || 0)}
             />
           </div>
+          {stMortgageBalance > 0 && payoff !== stMortgageBalance && (
+            <div style={{ textAlign: 'right', marginBottom: '8px' }}>
+              <button
+                type="button"
+                onClick={() => onUpdate('netPayoff', stMortgageBalance)}
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #86efac',
+                  color: '#166534',
+                  borderRadius: '4px',
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                🔄 Auto-Fill Payoff from Subject-To Loan ({money(stMortgageBalance)})
+              </button>
+            </div>
+          )}
           <div className="mini-row">
             <label>Liens / back taxes</label>
             <input

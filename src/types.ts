@@ -1,4 +1,20 @@
-export type StrategyTab = 'dscr' | 'sf' | 'st' | 'ff' | 'cmp' | 'guide';
+export type StrategyTab = 'dscr' | 'sf' | 'st' | 'ff' | 'dc' | 'cmp' | 'guide';
+
+export interface DoubleCloseInputs {
+  purchasePrice: number;       // A-to-B Contract Price (our purchase from seller)
+  endBuyerPrice: number;       // B-to-C Sale Price (our sale to cash buyer)
+  holdingDays: number;         // 1-3 days for transactional funding
+  transFundingPct: number;     // 1% - 2.5% fee for 1-day transactional flash loan
+  transFundingFlat: number;    // Flat loan admin/doc fee ($250 - $1,500)
+  atobClosingPct: number;      // A-B Closing costs % (settlement, title search, transfer stamps)
+  atobTitleFlat: number;       // A-B Title escrow/settlement flat fees
+  btocClosingPct: number;      // B-C Closing costs %
+  btocTitleFlat: number;       // B-C Escrow flat fees
+  paySellerClosingCosts: boolean; // Do we agree to cover the seller's closing costs?
+  sellerClosingCostsPct: number; // Seller's closing cost if covered by us
+  insuranceFee: number;        // Binder / title policy endorsement fee
+  otherConcessions: number;    // Any buyer/seller credits or municipal fees
+}
 
 export interface DSCRInputs {
   purchase: number;
@@ -119,4 +135,29 @@ export interface UniversalProperty {
   netLiens: number;
   netClosePct: number;
   netCredits: number;
+
+  // Double Close Specific
+  dcEndBuyerPrice: number;
+  dcTransFundingPct: number;
+  dcTransFundingFlat: number;
+  dcAtobClosingPct: number;
+  dcAtobTitleFlat: number;
+  dcBtocClosingPct: number;
+  dcBtocTitleFlat: number;
+  dcPaySellerClosingCosts: boolean;
+  dcSellerClosingCostsPct: number;
+  dcInsuranceFee: number;
+  dcOtherConcessions: number;
+}
+
+export interface SavedDeal {
+  id: string;
+  address: string;
+  seller?: string;
+  date: string;
+  strategy: StrategyTab;
+  price: number;
+  highlight: string;
+  notes?: string;
+  propertySnapshot?: UniversalProperty;
 }

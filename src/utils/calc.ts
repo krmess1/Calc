@@ -1,4 +1,4 @@
-import { DSCRInputs, SFInputs, STInputs, FFInputs, OfferRange } from '../types';
+import { DSCRInputs, SFInputs, STInputs, FFInputs, DoubleCloseInputs, OfferRange } from '../types';
 
 export function money(n: number): string {
   const rounded = Math.round(n);
@@ -265,7 +265,8 @@ export function calcSTOffer(v: STInputs): OfferRange {
 // Fix & Flip calculation (Jerry Norton Wholesaler MAO fix: deduct fee from seller offer)
 export function atFF(P: number, v: FFInputs) {
   const holding = v.hold * v.months;
-  const invested = P + v.rehab + holding;
+  const entryPrice = P + (v.fee || 0); // Cash to close / buyer contract entry price
+  const invested = P + (v.fee || 0) + v.rehab + holding; // Total all-in project basis
   const realtor = (v.arv * v.realtor) / 100;
   const closing = (v.arv * v.closing) / 100;
   const sell = realtor + closing;
@@ -274,6 +275,8 @@ export function atFF(P: number, v: FFInputs) {
   const margin = v.arv > 0 ? (profit / v.arv) * 100 : 0;
 
   return {
+    entryPrice,
+    totalBasis: invested,
     holding,
     invested,
     realtor,
@@ -345,3 +348,92 @@ export function calcFFOffer(v: FFInputs): OfferRange {
     status: 'good'
   };
 }
+
+// Double Close (A-B & B-C Back-to-Back Escrow) calculation
+export function atDoubleClose(v: DoubleCloseInputs) {
+  const grossSpread = Math.max(0, v.endBuyerPrice - v.purchasePrice);
+
+  // A-B Closing Costs (Buyer B pays closing costs on purchase from Seller A)
+  const atobPctCost = (v.purchasePrice * v.atobClosingPct) / 100;
+  const sellerPaidCost = v.paySellerClosingCosts ? (v.purchasePrice * v.sellerClosingCostsPct) / 100 : 0;
+  const atobTotal = atobPctCost + v.atobTitleFlat + sellerPaidCost;
+
+  // B-C Closing Costs (Wholesaler B pays seller closing costs on resale to End Buyer C)
+  const btocPctCost = (v.endBuyerPrice * v.btocClosingPct) / 100;
+  const btocTotal = btocPctCost + v.btocTitleFlat;
+
+  // Transactional Funding Loan (Same-day Flash Loan to fund A-B acquisition)
+  // Loan amount equals A-B purchase price plus closing costs if financed
+  const transLoanAmount = v.purchasePrice + atobTotal;
+  const transFundingFee = (transLoanAmount * v.transFundingPct) / 100 + v.transFundingFlat;
+
+  // Total Friction Costs
+  const totalClosingCosts = atobTotal + btocTotal;
+  const totalFundingCost = transFundingFee;
+  const totalDeductions = totalClosingCosts + totalFundingCost + v.insuranceFee + v.otherConcessions;
+
+  // Net Wholesaler Take-Home Payday
+  const netProfit = (v.endBuyerPrice - v.purchasePrice) - totalDeductions;
+
+  // Profit Margin & ROI on funding
+  const netMarginPct = v.endBuyerPrice > 0 ? (netProfit / v.endBuyerPrice) * 100 : 0;
+  const frictionPctOfSpread = grossSpread > 0 ? (totalDeductions / grossSpread) * 100 : 0;
+
+  return {
+    grossSpread,
+    atobTotal,
+    atobPctCost,
+    sellerPaidCost,
+    btocTotal,
+    btocPctCost,
+    transLoanAmount,
+    transFundingFee,
+    totalClosingCosts,
+    totalFundingCost,
+    totalDeductions,
+    netProfit,
+    netMarginPct,
+    frictionPctOfSpread,
+  };
+}
+
+export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: number = 10000): OfferRange {
+  // MAO for double close: End Buyer Price minus target fee minus estimated friction costs!
+  // Estimated friction ~ (1.5% A-B close + $750 flat) + (1.5% B-C close + $750 flat) + 1.25% trans funding
+  // Total friction approx 4.5% of end buyer price + $2,000 flat fees
+  const estFriction = v.endBuyerPrice * 0.045 + 2000;
+  const mao = Math.round(v.endBuyerPrice - targetWholesaleFee - estFriction);
+
+  if (v.endBuyerPrice <= 0 || mao <= 0) {
+    return {
+      anchor: null,
+      target: null,
+      mao: null,
+      note: 'End buyer price is not set. Enter the cash buyer exit price to calculate your Double Close offer ceiling.',
+      status: 'bad',
+    };
+  }
+
+  const anchor = Math.round((mao * 0.85) / 500) * 500;
+  const target = Math.round((mao * 0.95) / 500) * 500;
+  const over = v.purchasePrice - mao;
+
+  if (over > 0) {
+    return {
+      anchor,
+      target,
+      mao,
+      note: `You are <b>${money(over)} OVER</b> Double Close MMAO (${money(mao)}). With 2 sets of closing costs and transactional funding, your net fee will be pinched. Negotiate A-B price down to <b>${money(mao)}</b> to protect a ${money(targetWholesaleFee)} profit.`,
+      status: 'warn',
+    };
+  }
+
+  return {
+    anchor,
+    target,
+    mao,
+    note: `You are <b>${money(Math.abs(over))} UNDER</b> Double Close MMAO (${money(mao)}). Anchor opening offer at <b>${money(anchor)}</b>, work up toward Target (<b>${money(target)}</b>), and do not exceed MMAO (<b>${money(mao)}</b>) to keep your full net payday.`,
+    status: 'good',
+  };
+}
+

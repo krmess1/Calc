@@ -1,11 +1,16 @@
 import React from 'react';
+import { InfoTip } from './InfoTip';
 
-interface MetricCardProps {
+export interface MetricCardProps {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
   positive?: boolean;
+  tooltipTitle?: string;
+  tooltipEli12?: string;
+  tooltipFormula?: string;
+  tooltipRuleOfThumb?: string;
 }
 
 interface KeyMetricsBarProps {
@@ -34,6 +39,7 @@ export const KeyMetricsBar: React.FC<KeyMetricsBarProps> = ({ metrics }) => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            width: '100%',
           }}
         >
           <div
@@ -44,9 +50,21 @@ export const KeyMetricsBar: React.FC<KeyMetricsBarProps> = ({ metrics }) => {
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
               marginBottom: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
-            {m.label}
+            <span>{m.label}</span>
+            {m.tooltipEli12 && (
+              <InfoTip
+                title={m.tooltipTitle || m.label}
+                eli12={m.tooltipEli12}
+                formula={m.tooltipFormula}
+                ruleOfThumb={m.tooltipRuleOfThumb}
+                size="sm"
+              />
+            )}
           </div>
           <div
             style={{
@@ -74,3 +92,4 @@ export const KeyMetricsBar: React.FC<KeyMetricsBarProps> = ({ metrics }) => {
     </div>
   );
 };
+

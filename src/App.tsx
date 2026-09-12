@@ -19,6 +19,7 @@ import { SellerNetSheet } from './components/SellerNetSheet';
 import { RehabChecklist } from './components/RehabChecklist';
 import { HoldingCosts } from './components/HoldingCosts';
 import { CompareTab } from './components/CompareTab';
+import { DoubleCloseTab } from './components/DoubleCloseTab';
 import { GuideTab } from './components/GuideTab';
 import { KeyMetricsBar } from './components/KeyMetricsBar';
 import { ShareModal } from './components/ShareModal';
@@ -26,9 +27,11 @@ import { GoogleDrivePanel } from './components/GoogleDrivePanel';
 import { EnterpriseWatermark } from './components/EnterpriseWatermark';
 import { SinglePropertyHeader } from './components/SinglePropertyHeader';
 import { LiveMMAOBar } from './components/LiveMMAOBar';
+import { IdiotProofGuideModal } from './components/IdiotProofGuideModal';
 
 const DEFAULT_PROPERTY: UniversalProperty = {
   address: '124 Maple Avenue, Tampa, FL',
+  listPrice: 260000,
   purchasePrice: 200000,
   propertyValue: 260000,
   rent: 1800,
@@ -36,6 +39,10 @@ const DEFAULT_PROPERTY: UniversalProperty = {
   taxesAndInsurance: 450,
   assignmentFee: 5000,
   rehab: 35000,
+
+  // Seller Intel & Confirmation Flags
+  stMortgageEntered: true,
+  rehabEntered: true,
 
   // DSCR Specific
   dscrDown: 20,
@@ -67,6 +74,72 @@ const DEFAULT_PROPERTY: UniversalProperty = {
   netLiens: 0,
   netClosePct: 2,
   netCredits: 0,
+
+  // Double Close Specific
+  dcEndBuyerPrice: 225000,
+  dcTransFundingPct: 1.25,
+  dcTransFundingFlat: 500,
+  dcAtobClosingPct: 1.5,
+  dcAtobTitleFlat: 750,
+  dcBtocClosingPct: 1.5,
+  dcBtocTitleFlat: 750,
+  dcPaySellerClosingCosts: false,
+  dcSellerClosingCostsPct: 2.0,
+  dcInsuranceFee: 350,
+  dcOtherConcessions: 0,
+};
+
+const BLANK_PROPERTY: UniversalProperty = {
+  address: '',
+  listPrice: 0,
+  purchasePrice: 0,
+  propertyValue: 0,
+  rent: 0,
+  occupancy: 80,
+  taxesAndInsurance: 0,
+  assignmentFee: 5000,
+  rehab: 0,
+
+  stMortgageEntered: false,
+  rehabEntered: false,
+
+  dscrDown: 20,
+  dscrRate: 7.0,
+  dscrTerm: 30,
+  dscrOpex: 15,
+
+  sfDown: 10,
+  sfRate: 0,
+  sfBalloon: 5,
+  sfAmort: 30,
+  sfAppr: 3,
+
+  stMortgageBalance: 0,
+  stRate: 3.5,
+  stMonthsRemaining: 300,
+  stCashToSeller: 5000,
+
+  ffHoldMonthly: 900,
+  ffMonths: 6,
+  ffRealtorPct: 6,
+  ffClosingPct: 3,
+
+  netPayoff: 0,
+  netLiens: 0,
+  netClosePct: 2,
+  netCredits: 0,
+
+  dcEndBuyerPrice: 0,
+  dcTransFundingPct: 1.25,
+  dcTransFundingFlat: 500,
+  dcAtobClosingPct: 1.5,
+  dcAtobTitleFlat: 750,
+  dcBtocClosingPct: 1.5,
+  dcBtocTitleFlat: 750,
+  dcPaySellerClosingCosts: false,
+  dcSellerClosingCostsPct: 2.0,
+  dcInsuranceFee: 350,
+  dcOtherConcessions: 0,
 };
 
 export default function App() {
@@ -83,6 +156,7 @@ export default function App() {
 
   // Share Modal state
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isIdiotProofOpen, setIsIdiotProofOpen] = useState(false);
 
   // Universal updater helper
   const updateProperty = <K extends keyof UniversalProperty>(key: K, value: UniversalProperty[K]) => {
@@ -217,7 +291,28 @@ export default function App() {
             <h1>Deal Calculator</h1>
             <p>Drag or type. Everything updates live.</p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setIsIdiotProofOpen(true)}
+              style={{
+                background: '#fef3c7',
+                color: '#92400e',
+                border: '1.5px solid #fde68a',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+              title="Click for the complete beginner's guide to MMAO, wholesaling, and flipping formulas (Explain Like I'm 12)"
+            >
+              💡 Flipping 101 (Explain Like I'm 12)
+            </button>
             <button
               type="button"
               onClick={() => setIsShareOpen(true)}
@@ -245,8 +340,11 @@ export default function App() {
         <SinglePropertyHeader
           property={property}
           mmao={mmaoBreakdown}
+          activeTab={activeTab}
+          onSelectTab={(tab) => setActiveTab(tab)}
           onUpdate={updateProperty}
           onResetProperty={() => setProperty(DEFAULT_PROPERTY)}
+          onClearToZero={() => setProperty(BLANK_PROPERTY)}
         />
 
         {/* Navigation Tabs */}
@@ -255,6 +353,7 @@ export default function App() {
             type="button"
             className={`tab ${activeTab === 'dscr' ? 'active' : ''}`}
             onClick={() => setActiveTab('dscr')}
+            title="DSCR Rental: Buy & hold rental where the rent covers the mortgage — no personal W-2 required."
           >
             DSCR Rental
           </button>
@@ -262,6 +361,7 @@ export default function App() {
             type="button"
             className={`tab ${activeTab === 'sf' ? 'active' : ''}`}
             onClick={() => setActiveTab('sf')}
+            title="Seller Finance: Owner acts as your bank with low down payment and customized monthly terms."
           >
             Seller Finance
           </button>
@@ -269,6 +369,7 @@ export default function App() {
             type="button"
             className={`tab ${activeTab === 'st' ? 'active' : ''}`}
             onClick={() => setActiveTab('st')}
+            title="Subject-To: Take over the seller's low existing mortgage (e.g. 3%-4%) without qualifying for a new bank loan."
           >
             Subject-To
           </button>
@@ -276,13 +377,23 @@ export default function App() {
             type="button"
             className={`tab ${activeTab === 'ff' ? 'active' : ''}`}
             onClick={() => setActiveTab('ff')}
+            title="Fix & Flip: Buy at 70% MMAO, renovate with contractors, and sell on MLS for top dollar."
           >
             Fix &amp; Flip
           </button>
           <button
             type="button"
+            className={`tab ${activeTab === 'dc' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dc')}
+            title="Double Close: Back-to-back escrow (A-B & B-C) with transactional funding. Keep fees private and comply with state laws."
+          >
+            Double Close
+          </button>
+          <button
+            type="button"
             className={`tab ${activeTab === 'cmp' ? 'active' : ''}`}
             onClick={() => setActiveTab('cmp')}
+            title="Compare: See all exit strategies side-by-side to pick the highest profit offer."
           >
             Compare
           </button>
@@ -290,6 +401,7 @@ export default function App() {
             type="button"
             className={`tab ${activeTab === 'guide' ? 'active' : ''}`}
             onClick={() => setActiveTab('guide')}
+            title="Guide & Cheat Sheet: Jerry Norton 70% formula rules, scripts, and seller objection handling."
           >
             Guide &amp; Cheat Sheet
           </button>
@@ -300,24 +412,133 @@ export default function App() {
           <div id="dscr-tab" className="tab-panel">
             <KeyMetricsBar
               metrics={[
-                { label: 'Total Capital Required', value: money(dscrCalc.cashIn), sub: 'Down payment + assignment fee', highlight: true },
-                { label: 'Lender DSCR Ratio', value: dscrCalc.dscr.toFixed(2), sub: dscrCalc.dscr >= 1.25 ? '✓ Meets lender 1.25 bar' : '⚠️ Below 1.25 minimum', positive: dscrCalc.dscr >= 1.25 },
-                { label: 'Monthly Cash Flow', value: money(dscrCalc.cf), sub: `At ${dscr.occ}% occupancy`, positive: dscrCalc.cf > 0 },
-                { label: 'Cash on Cash Return', value: `${dscrCalc.coc.toFixed(1)}%`, sub: `${money(dscrCalc.cf * 12)}/yr`, positive: dscrCalc.coc >= 20 },
+                {
+                  label: 'Entry Price (Cash to Close)',
+                  value: money(dscrCalc.cashIn),
+                  sub: `${money(dscrCalc.down)} down (${dscr.down}%) · ${money(dscr.fee)} fee`,
+                  highlight: true,
+                  tooltipTitle: 'Buyer Entry Price (Cash to Close)',
+                  tooltipEli12: 'Total cash required on closing day to acquire the rental: The bank down payment plus your wholesale assignment fee paycheck. Buyers evaluate rental deals on cash flow relative to this entry price!',
+                  tooltipFormula: 'Bank Down Payment + Wholesale Assignment Fee',
+                  tooltipRuleOfThumb: 'Target ~20% Cash-on-Cash return so the buyer recoups their entire entry price in ~5 years.',
+                },
+                {
+                  label: 'Lender DSCR Ratio',
+                  value: dscrCalc.dscr.toFixed(2),
+                  sub: dscrCalc.dscr >= 1.25 ? '✓ Meets lender 1.25 bar' : '⚠️ Below 1.25 minimum',
+                  positive: dscrCalc.dscr >= 1.25,
+                  tooltipTitle: 'Debt Service Coverage Ratio (DSCR)',
+                  tooltipEli12: 'Rent divided by mortgage payment! DSCR banks do NOT look at your personal tax returns or job. 1.25 means the rent covers the monthly loan payment with 25% extra cushion.',
+                  tooltipFormula: 'Effective Monthly Rent ÷ Total Monthly Loan (P&I)',
+                  tooltipRuleOfThumb: '≥1.25 = Easy bank loan approval. Below 1.0 = Property loses money every month.',
+                },
+                {
+                  label: 'Monthly Cash Flow',
+                  value: money(dscrCalc.cf),
+                  sub: `At ${dscr.occ}% occupancy`,
+                  positive: dscrCalc.cf > 0,
+                  tooltipTitle: 'Monthly Cash Flow',
+                  tooltipEli12: 'Actual cash profit deposited into your bank account each month after paying the mortgage, taxes, insurance, repairs, and vacancy reserve.',
+                  tooltipRuleOfThumb: 'Aim for at least +$250 to +$400/month per door.',
+                },
+                {
+                  label: 'Cash on Cash Return',
+                  value: `${dscrCalc.coc.toFixed(1)}%`,
+                  sub: `${money(dscrCalc.cf * 12)}/yr`,
+                  positive: dscrCalc.coc >= 20,
+                  tooltipTitle: 'Cash on Cash Return (CoC)',
+                  tooltipEli12: 'Annual cash flow divided by your total cash invested. In Richard Taylor\'s Hold My Hand Wholesale community, buyers shoot for ~20% Cash-on-Cash return. At 20% CoC, you completely recoup your entire invested down payment and fees in just 5 years!',
+                  tooltipFormula: '(Annual Cash Flow ÷ Total Capital Invested) × 100',
+                  tooltipRuleOfThumb: 'Target ≥1.25 DSCR & ~20% CoC for an easy cash buyer sale.',
+                },
               ]}
             />
+            {property.rehab > 15000 && (
+              <div
+                style={{
+                  margin: '12px 0 4px 0',
+                  padding: '12px 16px',
+                  background: '#fffbeb',
+                  border: '1.5px solid #fde68a',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  lineHeight: 1.5,
+                  color: '#92400e',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}
+              >
+                <span style={{ fontSize: '20px', lineHeight: 1 }}>ℹ️</span>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', color: '#78350f', fontSize: '13px', marginBottom: '3px' }}>
+                    DSCR Rule: Rent-Ready Only (Universal Rehab: {money(property.rehab)})
+                  </strong>
+                  Standard DSCR lenders will <strong>not approve loans on properties needing heavy rehab</strong>. DSCR is designed strictly for rent-ready, tenant-ready properties. Heavy fixers require bridge loans or cash buyers.
+                  <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Keep it simple:</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('ff')}
+                      style={{
+                        background: '#b45309',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '5px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🔨 Switch to Fix &amp; Flip Tab (Uses 70% Rule with Rehab)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateProperty('rehab', 0)}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #d97706',
+                        color: '#92400e',
+                        borderRadius: '5px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🏠 Set Rehab to $0 (Assume Turnkey DSCR)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="calc-box">
               <RangeInput
                 id="dscr-purchase"
                 label="Purchase Price"
                 value={property.purchasePrice}
-                min={30000}
+                min={0}
                 max={1000000}
                 step={5000}
                 derived={money(property.purchasePrice)}
                 formulaBadge="Basis"
                 tip="The contract price you offer the seller. Universally synced across all tabs & tools."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'bad'
+                    : property.propertyValue > 0 && property.purchasePrice > property.propertyValue * 0.85
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'Purchase exceeds 100% of ARV'
+                    : property.propertyValue > 0 && property.purchasePrice > property.propertyValue * 0.85
+                    ? 'Thin spread (>85% of ARV)'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('purchasePrice', v)}
               />
 
@@ -325,13 +546,27 @@ export default function App() {
                 id="dscr-rent"
                 label="Monthly Rent"
                 value={property.rent}
-                min={200}
+                min={0}
                 max={12000}
                 step={25}
                 derived={`${money(property.rent * 12)}/yr gross`}
                 formulaBadge="Gross Rev"
                 tip="Check Zillow Rent Zestimate, Rentometer, or actual in-place leases. Universally synced across rental tabs."
                 isCore={true}
+                warnStatus={
+                  property.purchasePrice > 0 && property.rent < property.purchasePrice * 0.004
+                    ? 'bad'
+                    : property.purchasePrice > 0 && property.rent > property.purchasePrice * 0.03
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.purchasePrice > 0 && property.rent < property.purchasePrice * 0.004
+                    ? 'Severe cash flow risk (<0.4% rent ratio)'
+                    : property.purchasePrice > 0 && property.rent > property.purchasePrice * 0.03
+                    ? 'Rent >3% of price - verify market comps'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('rent', v)}
               />
 
@@ -346,6 +581,8 @@ export default function App() {
                 formulaBadge="P × Down%"
                 tip="Lenders typically require 20% to 25% down for DSCR investment loans."
                 isCore={true}
+                warnStatus={property.dscrDown < 15 ? 'bad' : property.dscrDown > 40 ? 'warn' : 'normal'}
+                warnMessage={property.dscrDown < 15 ? 'DSCR lenders require min 20% down' : property.dscrDown > 40 ? 'High cash down hurts CoC return' : undefined}
                 onChange={(v) => updateProperty('dscrDown', v)}
               />
 
@@ -360,6 +597,8 @@ export default function App() {
                 formulaBadge="Loan P&I"
                 tip="Current prevailing investor DSCR rates are usually 6.75% to 7.75%."
                 isCore={true}
+                warnStatus={property.dscrRate < 5.0 ? 'warn' : property.dscrRate > 11.0 ? 'bad' : 'normal'}
+                warnMessage={property.dscrRate < 5.0 ? 'Sub-market: prevailing DSCR rates are 6.75% - 8.5%' : property.dscrRate > 11.0 ? 'High rate breaks 1.25 DSCR debt coverage' : undefined}
                 onChange={(v) => updateProperty('dscrRate', v)}
               />
 
@@ -386,6 +625,8 @@ export default function App() {
                 derived={`${money(dscrCalc.effRent)} effective`}
                 formulaBadge="Rent × Occ%"
                 tip="80% occupancy is the realistic formula standard. Universally synced across cash flow strategies."
+                warnStatus={property.occupancy > 95 ? 'warn' : property.occupancy < 60 ? 'bad' : 'normal'}
+                warnMessage={property.occupancy > 95 ? 'Optimistic: standard underwriting uses 80%' : property.occupancy < 60 ? 'Severe vacancy assumed' : undefined}
                 onChange={(v) => updateProperty('occupancy', v)}
               />
 
@@ -546,9 +787,101 @@ export default function App() {
               )}
             </div>
 
-            <div className="buyer-pays">
-              <div className="buyer-pays-label">Buyer Pays (price + your fee)</div>
-              <div className="buyer-pays-value">{money(dscr.purchase + dscr.fee)}</div>
+            {/* Rental Buyer Entry Price, Cash Flow & Asset Basis Breakdown */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginTop: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🏢 Rental Buyer Underwriting: Entry Price vs. Asset Basis</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                    What rental investors actually bring to closing vs. the total leveraged asset purchase basis.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      background: dscrCalc.coc >= 20 ? '#dcfce7' : dscrCalc.coc > 0 ? '#fef9c3' : '#fee2e2',
+                      color: dscrCalc.coc >= 20 ? '#15803d' : dscrCalc.coc > 0 ? '#854d0e' : '#b91c1c',
+                    }}
+                  >
+                    {dscrCalc.coc >= 20 ? '🔥 High Yield (20%+ CoC)' : dscrCalc.coc > 0 ? '⚠️ Moderate Yield' : '❌ Negative CoC'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3-Column Core Metrics: Entry Price / Cash to Close, Monthly Cash Flow, and Total Asset Basis */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {/* 1. Buyer Entry Price / Closing Cash */}
+                <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Buyer Entry Price (Cash to Close)
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#14532d', margin: '4px 0 2px' }}>
+                    {money(dscrCalc.cashIn)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#15803d', lineHeight: 1.4 }}>
+                    <strong>{money(dscrCalc.down)}</strong> bank down ({dscr.down}%) + <strong>{money(dscr.fee)}</strong> your fee
+                  </div>
+                </div>
+
+                {/* 2. Cash Flow Yield for this Entry Cash */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Net Cash Flow for this Cash
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: dscrCalc.cf >= 0 ? '#0f766e' : '#b91c1c', margin: '4px 0 2px' }}>
+                    {money(dscrCalc.cf)}<span style={{ fontSize: '12px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                    <strong>{dscrCalc.coc.toFixed(1)}% CoC</strong> · {money(dscrCalc.cf * 12)}/yr · DSCR {dscrCalc.dscr.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* 3. Total Asset Purchase Price / Basis */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Total Asset Purchase Basis
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#1e293b', margin: '4px 0 2px' }}>
+                    {money(dscr.purchase + dscr.fee)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                    {money(dscr.purchase)} contract + {money(dscr.fee)} fee · Lender funds {money(dscrCalc.loan)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Leverage & Entry Capital Explanation Callout */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ fontSize: '16px', lineHeight: 1 }}>💡</div>
+                <div style={{ fontSize: '11.5px', color: '#1e40af', lineHeight: 1.5 }}>
+                  <strong>Rental Buyer Leverage &amp; Entry Capital:</strong> Rental buyers do not pay the full asset price upfront. With DSCR financing, a lender funds 75%–80% of the purchase. The investor&apos;s actual cash-at-risk is strictly their upfront <strong>Entry Price ({money(dscrCalc.cashIn)})</strong>. They decide to purchase based on the monthly cash flow ({money(dscrCalc.cf)}/mo) and Cash-on-Cash yield ({dscrCalc.coc.toFixed(1)}%) generated by this entry capital!
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -558,10 +891,42 @@ export default function App() {
           <div id="sf-tab" className="tab-panel">
             <KeyMetricsBar
               metrics={[
-                { label: 'Down + Your Fee', value: money(sfCalc.down + sf.fee), sub: `${money(sfCalc.down)} to seller · ${money(sf.fee)} fee`, highlight: true },
-                { label: 'Monthly Cash Flow', value: money(sfCalc.cf), sub: `At ${sf.occ}% occupancy`, positive: sfCalc.cf > 0 },
-                { label: 'Balloon Refi Test', value: sfCalc.refiOk ? 'Pass' : 'Shortfall', sub: sfCalc.refiOk ? '75% LTV covers balloon' : `Short ${money(sfCalc.bal - sfCalc.fv * 0.75)}`, positive: sfCalc.refiOk },
-                { label: 'Cash on Cash Return', value: `${sfCalc.coc.toFixed(1)}%`, sub: `${money(sfCalc.cf * 12)}/yr`, positive: sfCalc.coc >= 20 },
+                {
+                  label: 'Entry Price (Cash to Close)',
+                  value: money(sfCalc.down + sf.fee),
+                  sub: `${money(sfCalc.down)} down (${sf.down}%) · ${money(sf.fee)} fee`,
+                  highlight: true,
+                  tooltipTitle: 'Buyer Entry Price / Cash to Close',
+                  tooltipEli12: 'Total upfront cash required at closing to acquire the property on seller financing: Down payment to the owner plus your wholesale assignment fee. Creative buyers care about how much cash flow they get for this entry capital!',
+                  tooltipFormula: 'Seller Down Payment + Wholesale Fee',
+                  tooltipRuleOfThumb: 'Target 5% to 15% down. Low down payment preserves capital and maximizes cash-on-cash return.',
+                },
+                {
+                  label: 'Monthly Cash Flow',
+                  value: money(sfCalc.cf),
+                  sub: `At ${sf.occ}% occupancy`,
+                  positive: sfCalc.cf > 0,
+                  tooltipTitle: 'Monthly Cash Flow',
+                  tooltipEli12: 'Net money in your pocket each month after paying the seller their monthly note payment and paying taxes and insurance.',
+                  tooltipRuleOfThumb: 'Negotiate 0% or low interest (2%-4%) with the owner to boost cash flow!',
+                },
+                {
+                  label: 'Balloon Refi Test',
+                  value: sfCalc.refiOk ? 'Pass' : 'Shortfall',
+                  sub: sfCalc.refiOk ? '75% LTV covers balloon' : `Short ${money(sfCalc.bal - sfCalc.fv * 0.75)}`,
+                  positive: sfCalc.refiOk,
+                  tooltipTitle: 'Balloon Refinance Viability',
+                  tooltipEli12: 'When the balloon payment comes due (e.g. Year 5), can you refinance into a conventional bank loan to pay off the owner? If PASS, appreciation and loan paydown allow a standard 75% loan to cover the debt.',
+                  tooltipRuleOfThumb: 'Always confirm the balloon refi passes before signing a seller finance agreement!',
+                },
+                {
+                  label: 'Cash on Cash Return',
+                  value: `${sfCalc.coc.toFixed(1)}%`,
+                  sub: `${money(sfCalc.cf * 12)}/yr`,
+                  positive: sfCalc.coc >= 20,
+                  tooltipTitle: 'Cash on Cash Return',
+                  tooltipEli12: 'Annual rental cash flow divided by total entry capital (down payment + wholesale fee). Because seller finance requires so little cash down, returns are often massive (30%+)!',
+                },
               ]}
             />
             <div className="calc-box">
@@ -569,13 +934,27 @@ export default function App() {
                 id="sf-purchase"
                 label="Purchase Price"
                 value={property.purchasePrice}
-                min={30000}
+                min={0}
                 max={1000000}
                 step={5000}
                 derived={money(property.purchasePrice)}
                 formulaBadge="Basis"
                 tip="The agreed purchase price. Universally synced across all tabs & tools."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'bad'
+                    : property.propertyValue > 0 && property.purchasePrice > property.propertyValue * 0.85
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'Purchase exceeds 100% of ARV'
+                    : property.propertyValue > 0 && property.purchasePrice > property.propertyValue * 0.85
+                    ? 'Thin spread (>85% of ARV)'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('purchasePrice', v)}
               />
 
@@ -583,13 +962,27 @@ export default function App() {
                 id="sf-rent"
                 label="Monthly Rent"
                 value={property.rent}
-                min={200}
+                min={0}
                 max={12000}
                 step={25}
                 derived={`${money(property.rent * 12)}/yr gross`}
                 formulaBadge="Gross Rev"
                 tip="Estimated monthly rental income. Universally synced across rental strategies."
                 isCore={true}
+                warnStatus={
+                  property.purchasePrice > 0 && property.rent < property.purchasePrice * 0.004
+                    ? 'bad'
+                    : property.purchasePrice > 0 && property.rent > property.purchasePrice * 0.03
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.purchasePrice > 0 && property.rent < property.purchasePrice * 0.004
+                    ? 'Severe cash flow risk (<0.4% rent ratio)'
+                    : property.purchasePrice > 0 && property.rent > property.purchasePrice * 0.03
+                    ? 'Rent >3% of price - verify market comps'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('rent', v)}
               />
 
@@ -604,6 +997,8 @@ export default function App() {
                 formulaBadge="P × Down%"
                 tip="Typical seller finance down payments range from 5% to 15%. Lower down = higher cash on cash return."
                 isCore={true}
+                warnStatus={property.sfDown > 25 ? 'warn' : 'normal'}
+                warnMessage={property.sfDown > 25 ? 'High down payment for creative deal (aim 5%-15%)' : undefined}
                 onChange={(v) => updateProperty('sfDown', v)}
               />
 
@@ -618,6 +1013,8 @@ export default function App() {
                 formulaBadge="Note Rate"
                 tip="Aim for 0% to 4%. A 0% interest note amortized over 30 years keeps debt service minimal."
                 isCore={true}
+                warnStatus={property.sfRate > 8.0 ? 'warn' : 'normal'}
+                warnMessage={property.sfRate > 8.0 ? 'High note rate for seller carry; aim for 0% - 4%' : undefined}
                 onChange={(v) => updateProperty('sfRate', v)}
               />
 
@@ -631,6 +1028,8 @@ export default function App() {
                 derived={`${money(sfCalc.bal)} due`}
                 formulaBadge="Refi Due"
                 tip="When the remaining loan balance must be paid off. Aim for 5–10 years minimum so you have time to refinance or sell."
+                warnStatus={property.sfBalloon < 3 ? 'bad' : property.sfBalloon > 15 ? 'warn' : 'normal'}
+                warnMessage={property.sfBalloon < 3 ? 'High refi risk: 1-2 yr balloons leave no cushion' : property.sfBalloon > 15 ? 'Sellers rarely agree to >15 yr balloons' : undefined}
                 onChange={(v) => updateProperty('sfBalloon', v)}
               />
 
@@ -657,6 +1056,8 @@ export default function App() {
                 derived={`${money(sfCalc.effRent)} effective`}
                 formulaBadge="Rent × Occ%"
                 tip="Accounts for tenant vacancy and credit loss. Universally synced."
+                warnStatus={property.occupancy > 95 ? 'warn' : property.occupancy < 60 ? 'bad' : 'normal'}
+                warnMessage={property.occupancy > 95 ? 'Optimistic: standard underwriting uses 80%' : property.occupancy < 60 ? 'Severe vacancy assumed' : undefined}
                 onChange={(v) => updateProperty('occupancy', v)}
               />
 
@@ -828,9 +1229,102 @@ export default function App() {
               )}
             </div>
 
-            <div className="buyer-pays">
-              <div className="buyer-pays-label">Buyer Pays (price + your fee)</div>
-              <div className="buyer-pays-value">{money(sf.purchase + sf.fee)}</div>
+            {/* Creative Buyer Entry Price, Cash Flow & Exit Strategy Breakdown */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginTop: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🎯 Creative Buyer Underwriting: Entry Price vs. Cash Flow</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                    What end buyers actually pay at closing, their monthly cash flow yield, and exit protection.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      background: sfCalc.coc >= 20 ? '#dcfce7' : sfCalc.coc > 0 ? '#fef9c3' : '#fee2e2',
+                      color: sfCalc.coc >= 20 ? '#15803d' : sfCalc.coc > 0 ? '#854d0e' : '#b91c1c',
+                    }}
+                  >
+                    {sfCalc.coc >= 20 ? '🔥 High Yield (20%+ CoC)' : sfCalc.coc > 0 ? '⚠️ Moderate Yield' : '❌ Negative CoC'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3-Column Core Metrics: Entry Price / Cash to Close, Monthly Cash Flow, and Total Acquisition */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {/* 1. Buyer Entry Price / Closing Cash */}
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Buyer Entry Price (Cash to Close)
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#14532d', margin: '4px 0 2px' }}>
+                    {money(sfCalc.down + sf.fee)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#15803d', lineHeight: 1.4 }}>
+                    <strong>{money(sfCalc.down)}</strong> down to seller ({sf.down}%) + <strong>{money(sf.fee)}</strong> your fee
+                  </div>
+                </div>
+
+                {/* 2. Cash Flow Yield */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Net Cash Flow for this Cash
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: sfCalc.cf >= 0 ? '#0f766e' : '#b91c1c', margin: '4px 0 2px' }}>
+                    {money(sfCalc.cf)}<span style={{ fontSize: '12px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                    <strong>{sfCalc.coc.toFixed(1)}% CoC</strong> · {money(sfCalc.cf * 12)}/yr · {sfCalc.cf > 0 ? `${(sfCalc.cashIn / sfCalc.cf).toFixed(1)} mo payback` : 'no payback'}
+                  </div>
+                </div>
+
+                {/* 3. Total Purchase Basis */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Total Purchase Price / Basis
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#1e293b', margin: '4px 0 2px' }}>
+                    {money(sf.purchase + sf.fee)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                    {money(sf.purchase)} contract price + {money(sf.fee)} fee · Seller carries {money(sfCalc.loan)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Miss 2 Months Exit Strategy Callout */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ fontSize: '16px', lineHeight: 1 }}>🛡️</div>
+                <div style={{ fontSize: '11.5px', color: '#1e40af', lineHeight: 1.5 }}>
+                  <strong>Creative Buyer Exit (&quot;Miss 2 Months&quot; Walkaway Protection):</strong>{' '}
+                  Creative investors evaluate deals in <em>any area or market nationwide</em> because contracts include performance / deed-in-lieu default clauses. If tenant default occurs or cash flow ceases, missing 2 consecutive note payments reverts ownership back to the seller with zero personal deficiency or foreclosure judgment. Their total downside risk is capped strictly at their upfront cash to close (<strong>{money(sfCalc.down + sf.fee)}</strong>). This is why buyers prioritize <strong>monthly cash flow per dollar of entry capital</strong> over property location or retail discount!
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -840,10 +1334,43 @@ export default function App() {
           <div id="st-tab" className="tab-panel">
             <KeyMetricsBar
               metrics={[
-                { label: 'Total Cash to Enter', value: money(stCalc.cashIn), sub: `${money(st.cash)} seller · ${money(st.fee)} fee`, highlight: true },
-                { label: 'Instant Equity Captured', value: money(stCalc.equity), sub: `${stCalc.equityPct.toFixed(0)}% equity · ${stCalc.ltv.toFixed(0)}% LTV`, positive: stCalc.equity > 0 },
-                { label: 'Monthly Cash Flow', value: money(stCalc.cf), sub: `At ${st.occ}% occupancy`, positive: stCalc.cf > 0 },
-                { label: 'Cash on Cash Return', value: `${stCalc.coc.toFixed(1)}%`, sub: `${money(stCalc.cf * 12)}/yr`, positive: stCalc.coc >= 20 },
+                {
+                  label: 'Entry Price (Cash to Close)',
+                  value: money(stCalc.cashIn),
+                  sub: `${money(st.cash)} seller · ${money(st.fee)} fee`,
+                  highlight: true,
+                  tooltipTitle: 'Buyer Entry Price (Cash to Close)',
+                  tooltipEli12: 'Total money needed to take over the deed: Cash given to the seller for their moving expenses plus your wholesale assignment fee. Sub-To gives ownership of an expensive asset for minimal entry capital!',
+                  tooltipFormula: 'Cash to Seller + Wholesale Fee',
+                  tooltipRuleOfThumb: 'Keep cash to seller under 10% of total property value.',
+                },
+                {
+                  label: 'Instant Equity Captured',
+                  value: money(stCalc.equity),
+                  sub: `${stCalc.equityPct.toFixed(0)}% equity · ${stCalc.ltv.toFixed(0)}% LTV`,
+                  positive: stCalc.equity > 0,
+                  tooltipTitle: 'Instant Day-1 Equity',
+                  tooltipEli12: 'Instant wealth created on the day of closing! The property value minus the existing mortgage balance you are taking over.',
+                  tooltipFormula: 'Property Market Value − Existing Mortgage Balance',
+                  tooltipRuleOfThumb: 'Positive equity gives you a safety net if real estate prices fluctuate.',
+                },
+                {
+                  label: 'Monthly Cash Flow',
+                  value: money(stCalc.cf),
+                  sub: `At ${st.occ}% occupancy`,
+                  positive: stCalc.cf > 0,
+                  tooltipTitle: 'Monthly Cash Flow',
+                  tooltipEli12: 'Profit remaining each month from tenant rent after paying the seller\'s existing mortgage note and property taxes/insurance.',
+                  tooltipRuleOfThumb: 'Taking over a 2.5% to 4% interest rate mortgage generates huge monthly cash flow!',
+                },
+                {
+                  label: 'Cash on Cash Return',
+                  value: `${stCalc.coc.toFixed(1)}%`,
+                  sub: `${money(stCalc.cf * 12)}/yr`,
+                  positive: stCalc.coc >= 20,
+                  tooltipTitle: 'Cash on Cash Return',
+                  tooltipEli12: 'Annual cash flow divided by the cash needed to acquire the deed. Subject-To often produces 40%+ returns because you skip bank loan fees.',
+                },
               ]}
             />
             <div className="calc-box">
@@ -851,13 +1378,15 @@ export default function App() {
                 id="st-value"
                 label="Property Value"
                 value={property.propertyValue}
-                min={30000}
+                min={0}
                 max={1000000}
                 step={5000}
                 derived={money(property.propertyValue)}
                 formulaBadge="Current Value"
                 tip="Fair market value today as-is. Universally synced with ARV across all strategies."
                 isCore={true}
+                warnStatus={property.propertyValue === 0 ? 'warn' : 'normal'}
+                warnMessage={property.propertyValue === 0 ? 'Enter market value to evaluate equity' : undefined}
                 onChange={(v) => updateProperty('propertyValue', v)}
               />
 
@@ -872,6 +1401,20 @@ export default function App() {
                 formulaBadge="Payoff Amount"
                 tip="The exact remaining principal on seller's current loan. Also automatically syncs to Seller Net Sheet payoff."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 && property.stMortgageBalance > property.propertyValue
+                    ? 'bad'
+                    : property.stMortgageBalance === 0
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 && property.stMortgageBalance > property.propertyValue
+                    ? 'Underwater loan: owes more than market value'
+                    : property.stMortgageBalance === 0
+                    ? 'Need seller mortgage balance from call'
+                    : undefined
+                }
                 onChange={(v) => {
                   updateProperty('stMortgageBalance', v);
                   updateProperty('netPayoff', v);
@@ -889,6 +1432,8 @@ export default function App() {
                 formulaBadge="Locked Rate"
                 tip="The existing fixed rate. If they locked 2.75%–4.5% during 2020–2021, that loan rate is the real gold mine."
                 isCore={true}
+                warnStatus={property.stRate > 6.5 ? 'warn' : 'normal'}
+                warnMessage={property.stRate > 6.5 ? 'High rate for Sub-To; prime deals are 2.5% - 4.5%' : undefined}
                 onChange={(v) => updateProperty('stRate', v)}
               />
 
@@ -896,13 +1441,27 @@ export default function App() {
                 id="st-rent"
                 label="Monthly Rent"
                 value={property.rent}
-                min={200}
+                min={0}
                 max={12000}
                 step={25}
                 derived={`${money(property.rent * 12)}/yr gross`}
                 formulaBadge="Gross Rev"
                 tip="Expected rent. Must exceed their monthly PITI payment for positive cash flow. Universally synced."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 && property.rent < property.propertyValue * 0.004
+                    ? 'bad'
+                    : property.propertyValue > 0 && property.rent > property.propertyValue * 0.03
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 && property.rent < property.propertyValue * 0.004
+                    ? 'Severe cash flow risk (<0.4% rent ratio)'
+                    : property.propertyValue > 0 && property.rent > property.propertyValue * 0.03
+                    ? 'Rent >3% of price - verify market comps'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('rent', v)}
               />
 
@@ -917,6 +1476,20 @@ export default function App() {
                 formulaBadge="Move Money"
                 tip="Upfront cash to the seller (moving money, catching up arrears, or equity buyout). Keep this low."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 &&
+                  (property.propertyValue - property.stMortgageBalance) > 0 &&
+                  property.stCashToSeller > (property.propertyValue - property.stMortgageBalance)
+                    ? 'bad'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 &&
+                  (property.propertyValue - property.stMortgageBalance) > 0 &&
+                  property.stCashToSeller > (property.propertyValue - property.stMortgageBalance)
+                    ? 'Cash to seller exceeds property equity'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('stCashToSeller', v)}
               />
 
@@ -943,6 +1516,8 @@ export default function App() {
                 derived={`${money(stCalc.effRent)} effective`}
                 formulaBadge="Rent × Occ%"
                 tip="Standard 80%–85% occupancy benchmark for vacancy and maintenance reserve buffer. Universally synced."
+                warnStatus={property.occupancy > 95 ? 'warn' : property.occupancy < 60 ? 'bad' : 'normal'}
+                warnMessage={property.occupancy > 95 ? 'Optimistic: standard underwriting uses 80%' : property.occupancy < 60 ? 'Severe vacancy assumed' : undefined}
                 onChange={(v) => updateProperty('occupancy', v)}
               />
 
@@ -1103,9 +1678,101 @@ export default function App() {
               )}
             </div>
 
-            <div className="buyer-pays">
-              <div className="buyer-pays-label">Buyer Entry Cost (cash to seller + your fee)</div>
-              <div className="buyer-pays-value">{money(stCalc.cashIn)}</div>
+            {/* Subject-To Buyer Entry Price, Cash Flow & Asset Basis Breakdown */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginTop: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📑 Subject-To Buyer Underwriting: Entry Price vs. Total Asset</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                    What buyers actually pay to take over the deed vs. the total property value and existing mortgage debt.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      background: stCalc.equity > 0 ? '#dcfce7' : '#fee2e2',
+                      color: stCalc.equity > 0 ? '#15803d' : '#b91c1c',
+                    }}
+                  >
+                    {stCalc.equity > 0 ? `🛡️ ${money(stCalc.equity)} Instant Equity` : '⚠️ Zero / Negative Equity'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3-Column Core Metrics: Entry Price / Cash to Close, Monthly Cash Flow, and Total Property Value */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {/* 1. Buyer Entry Price / Closing Cash */}
+                <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Buyer Entry Price (Cash to Close)
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#14532d', margin: '4px 0 2px' }}>
+                    {money(stCalc.cashIn)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#15803d', lineHeight: 1.4 }}>
+                    <strong>{money(st.cash)}</strong> to seller + <strong>{money(st.fee)}</strong> your fee
+                  </div>
+                </div>
+
+                {/* 2. Cash Flow Yield for this Entry Cash */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Net Cash Flow for this Cash
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: stCalc.cf >= 0 ? '#0f766e' : '#b91c1c', margin: '4px 0 2px' }}>
+                    {money(stCalc.cf)}<span style={{ fontSize: '12px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                    <strong>{stCalc.coc.toFixed(1)}% CoC</strong> · {money(stCalc.cf * 12)}/yr · {money(stCalc.equity)} equity
+                  </div>
+                </div>
+
+                {/* 3. Total Property Asset Value & Debt */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Total Property Asset Value
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#1e293b', margin: '4px 0 2px' }}>
+                    {money(st.value)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                    Takes over {money(st.mtg)} existing mortgage at {st.rate}% interest
+                  </div>
+                </div>
+              </div>
+
+              {/* Subject-To Underwriting Callout */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ fontSize: '16px', lineHeight: 1 }}>💡</div>
+                <div style={{ fontSize: '11.5px', color: '#1e40af', lineHeight: 1.5 }}>
+                  <strong>Subject-To Buyer Economics:</strong> The end buyer acquires ownership of a <strong>{money(st.value)}</strong> property for just <strong>{money(stCalc.cashIn)}</strong> in out-of-pocket entry capital. They inherit a locked-in {st.rate}% mortgage (which cannot be obtained from banks today), capture <strong>{money(stCalc.equity)}</strong> in day-1 equity, and pocket {money(stCalc.cf)}/mo in cash flow with zero new loan origination costs!
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1115,10 +1782,42 @@ export default function App() {
           <div id="ff-tab" className="tab-panel">
             <KeyMetricsBar
               metrics={[
-                { label: 'Total Cash Invested', value: money(ffCalc.invested), sub: `Purchase + ${money(ff.rehab)} rehab + carry`, highlight: true },
-                { label: 'Net Profit to Flipper', value: money(ffCalc.profit), sub: `After ${money(ffCalc.sell)} realtor & closing`, positive: ffCalc.profit >= 25000 },
-                { label: 'Flipper ROI', value: `${ffCalc.roi.toFixed(1)}%`, sub: `${ffCalc.margin.toFixed(1)}% margin on ARV`, positive: ffCalc.roi >= 20 },
-                { label: 'Your Assignment Fee', value: money(ff.fee), sub: 'Deducted from seller MAO', positive: true },
+                {
+                  label: 'Entry Price (To Close Deal)',
+                  value: money(ff.purchase + ff.fee),
+                  sub: `${money(ff.purchase)} contract + ${money(ff.fee)} fee`,
+                  highlight: true,
+                  tooltipTitle: 'Buyer Entry Acquisition Price',
+                  tooltipEli12: 'The purchase contract price plus your wholesale assignment fee. This is the contract acquisition price the cash flipper pays on closing day to take title before starting renovations.',
+                  tooltipFormula: 'Purchase Contract Price + Wholesale Assignment Fee',
+                  tooltipRuleOfThumb: 'Must be at or below 70% ARV minus Rehab to allow your end buyer to make their profit margin.',
+                },
+                {
+                  label: 'Total All-In Asset Basis',
+                  value: money(ffCalc.invested),
+                  sub: `Entry + ${money(ff.rehab)} rehab + carry`,
+                  tooltipTitle: 'Total All-In Project Capital',
+                  tooltipEli12: 'Every dollar needed to complete the flip: Purchase price + wholesale fee + contractor repairs + monthly holding costs (loan interest, taxes, utilities) + acquisition closing costs.',
+                  tooltipFormula: 'Purchase + Fee + Rehab + Holding Costs + Closing Fees',
+                },
+                {
+                  label: 'Net Profit to Flipper',
+                  value: money(ffCalc.profit),
+                  sub: `After ${money(ffCalc.sell)} realtor & closing`,
+                  positive: ffCalc.profit >= 25000,
+                  tooltipTitle: 'Net Flip Profit',
+                  tooltipEli12: 'Cash in the flipper\'s pocket after selling the remodeled home, paying Realtor commissions (5%-6%), and paying off lenders.',
+                  tooltipRuleOfThumb: 'Flippers look for at least $25k to $40k net profit to justify the construction risk and effort.',
+                },
+                {
+                  label: 'Flipper ROI',
+                  value: `${ffCalc.roi.toFixed(1)}%`,
+                  sub: `On ${money(ff.arv)} ARV resale`,
+                  positive: ffCalc.roi >= 20,
+                  tooltipTitle: 'Return on Investment (ROI)',
+                  tooltipEli12: 'Net profit divided by total cash invested. 20% ROI means if a flipper puts up $100k, they get back their $100k plus $20k profit.',
+                  tooltipRuleOfThumb: 'Target ≥20% ROI. Under 12% is too risky if an unexpected repair occurs.',
+                },
               ]}
             />
             <div className="calc-box">
@@ -1126,13 +1825,27 @@ export default function App() {
                 id="ff-purchase"
                 label="Purchase Price"
                 value={property.purchasePrice}
-                min={20000}
+                min={0}
                 max={900000}
                 step={5000}
                 derived={money(property.purchasePrice)}
                 formulaBadge="Contract Price"
                 tip="The price on the wholesale contract. Universally synced across all tabs & tools."
                 isCore={true}
+                warnStatus={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'bad'
+                    : mmaoBreakdown.mao70 > 0 && property.purchasePrice > mmaoBreakdown.mao70
+                    ? 'warn'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.propertyValue > 0 && property.purchasePrice > property.propertyValue
+                    ? 'Purchase price exceeds ARV'
+                    : mmaoBreakdown.mao70 > 0 && property.purchasePrice > mmaoBreakdown.mao70
+                    ? 'Exceeds 70% Jerry Norton Rule MMAO'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('purchasePrice', v)}
               />
 
@@ -1140,13 +1853,23 @@ export default function App() {
                 id="ff-arv"
                 label="After Repair Value"
                 value={property.propertyValue}
-                min={30000}
+                min={0}
                 max={1200000}
                 step={5000}
                 derived={money(property.propertyValue)}
                 formulaBadge="ARV Basis"
                 tip="What the property will sell for fully renovated. Universally synced with property value."
                 isCore={true}
+                warnStatus={
+                  property.purchasePrice > 0 && property.propertyValue <= property.purchasePrice
+                    ? 'bad'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.purchasePrice > 0 && property.propertyValue <= property.purchasePrice
+                    ? 'ARV must exceed purchase price'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('propertyValue', v)}
               />
 
@@ -1161,6 +1884,20 @@ export default function App() {
                 formulaBadge="Deducted in MAO"
                 tip="Estimated scope of work. Live-synced with the Itemized Rehab Checklist tool below."
                 isCore={true}
+                warnStatus={
+                  property.rehab === 0
+                    ? 'warn'
+                    : property.propertyValue > 0 && property.rehab > property.propertyValue * 0.6
+                    ? 'bad'
+                    : 'normal'
+                }
+                warnMessage={
+                  property.rehab === 0
+                    ? '$0 rehab assumes turnkey / no repairs needed'
+                    : property.propertyValue > 0 && property.rehab > property.propertyValue * 0.6
+                    ? 'Heavy structural rebuild (>60% of ARV)'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('rehab', v)}
               />
 
@@ -1201,6 +1938,14 @@ export default function App() {
                 derived={`${money(property.ffHoldMonthly * property.ffMonths)} total`}
                 formulaBadge="Project Duration"
                 tip="Standard flip timeline: 3 months rehab + 1 month list/pending + 1 month close = 5 to 6 months."
+                warnStatus={property.ffMonths < 3 || property.ffMonths > 12 ? 'warn' : 'normal'}
+                warnMessage={
+                  property.ffMonths < 3
+                    ? 'Aggressive timeline: most flips take 4-6 months'
+                    : property.ffMonths > 12
+                    ? 'Long holding duration increases carrying costs'
+                    : undefined
+                }
                 onChange={(v) => updateProperty('ffMonths', v)}
               />
 
@@ -1375,19 +2120,119 @@ export default function App() {
               )}
             </div>
 
-            <div className="buyer-pays">
-              <div className="buyer-pays-label">Buyer Pays (price + your fee)</div>
-              <div className="buyer-pays-value">{money(ff.purchase + ff.fee)}</div>
+            {/* Fix & Flip Buyer Entry Price, Profit & Total Project Basis Breakdown */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #d1d5db',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginTop: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🔨 Fix &amp; Flip Underwriting: Entry Purchase Price vs. Total Project Basis</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                    What cash flippers pay on closing day to take title vs. the total all-in project capital required.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      background: ffCalc.profit >= 25000 ? '#dcfce7' : ffCalc.profit > 0 ? '#fef9c3' : '#fee2e2',
+                      color: ffCalc.profit >= 25000 ? '#15803d' : ffCalc.profit > 0 ? '#854d0e' : '#b91c1c',
+                    }}
+                  >
+                    {ffCalc.profit >= 25000 ? `🔥 ${money(ffCalc.profit)} Net Profit` : ffCalc.profit > 0 ? `⚠️ Low Margin (${money(ffCalc.profit)})` : '❌ Negative Flip'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3-Column Core Metrics: Entry Price / Contract Acquisition, Total All-In Project Basis, and Net Profit / Resale */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {/* 1. Buyer Entry Acquisition Price / To Close */}
+                <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Buyer Entry Price (To Close)
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#14532d', margin: '4px 0 2px' }}>
+                    {money(ff.purchase + ff.fee)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#15803d', lineHeight: 1.4 }}>
+                    <strong>{money(ff.purchase)}</strong> contract + <strong>{money(ff.fee)}</strong> your wholesale fee
+                  </div>
+                </div>
+
+                {/* 2. Total All-In Project Basis (Capital Required) */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Total All-In Asset Basis
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: '#1e293b', margin: '4px 0 2px' }}>
+                    {money(ffCalc.invested)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                    Entry + {money(ff.rehab)} rehab + {money(ffCalc.holding)} carry &amp; closing
+                  </div>
+                </div>
+
+                {/* 3. Net Flipper Profit & Retail Exit */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Net Profit &amp; Resale ARV
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: ffCalc.profit >= 25000 ? '#15803d' : '#854d0e', margin: '4px 0 2px' }}>
+                    {money(ffCalc.profit)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                    <strong>{ffCalc.roi.toFixed(1)}% ROI</strong> ({ffCalc.margin.toFixed(1)}% margin) on {money(ff.arv)} ARV
+                  </div>
+                </div>
+              </div>
+
+              {/* Cash Flipper Underwriting Callout */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ fontSize: '16px', lineHeight: 1 }}>💡</div>
+                <div style={{ fontSize: '11.5px', color: '#1e40af', lineHeight: 1.5 }}>
+                  <strong>Flipper Entry Price Discipline:</strong> Cash flippers check their upfront <strong>Entry Acquisition Price ({money(ff.purchase + ff.fee)})</strong> first to verify it clears the 70% rule (70% × {money(ff.arv)} ARV − {money(ff.rehab)} rehab = {money(ff.arv * 0.7 - ff.rehab)} ceiling) before committing construction capital and holding cost risk!
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* 5. Compare Tab */}
-        {activeTab === 'cmp' && (
-          <CompareTab dscr={dscr} sf={sf} st={st} ff={ff} />
+        {/* 5. Double Close Tab */}
+        {activeTab === 'dc' && (
+          <DoubleCloseTab
+            property={property}
+            onUpdate={(field, val) => updateProperty(field, val)}
+          />
         )}
 
-        {/* 6. Guide & Cheat Sheet Tab */}
+        {/* 6. Compare Tab */}
+        {activeTab === 'cmp' && (
+          <CompareTab dscr={dscr} sf={sf} st={st} ff={ff} property={property} onSelectTab={(tab) => setActiveTab(tab)} />
+        )}
+
+        {/* 7. Guide & Cheat Sheet Tab */}
         {activeTab === 'guide' && (
           <GuideTab />
         )}
@@ -1446,6 +2291,12 @@ export default function App() {
           ff: ffOffer,
         }}
         onClose={() => setIsShareOpen(false)}
+      />
+
+      {/* 12-Year-Old Flipping & Wholesaling Guide Modal */}
+      <IdiotProofGuideModal
+        isOpen={isIdiotProofOpen}
+        onClose={() => setIsIdiotProofOpen(false)}
       />
 
       {/* Hidden Print Container for Clean Single-Page PDF Printouts */}

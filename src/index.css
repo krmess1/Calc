@@ -74,34 +74,44 @@ body {
 
 .tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid #d3d1c7;
+  gap: 6px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid #d3d1c7;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tab {
-  min-height: 48px;
-  padding: 13px 16px;
+  min-height: 44px;
+  padding: 10px 16px;
   border: none;
   background: none;
-  font-size: 15px;
+  font-size: 14.5px;
   font-family: inherit;
-  color: #888780;
+  font-weight: 500;
+  color: #64748b;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  border-bottom: 2.5px solid transparent;
   white-space: nowrap;
-  margin-bottom: -1px;
+  margin-bottom: -1.5px;
   touch-action: manipulation;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
-.tab.active { color: #2c2c2a; font-weight: 600; border-bottom-color: #2c2c2a; }
+.tab:hover {
+  color: #1e293b;
+}
+.tab.active {
+  color: #185fa5;
+  font-weight: 700;
+  border-bottom-color: #185fa5;
+}
 
 .calc-box {
   background: #fff;
-  border: 1px solid #d3d1c7;
-  border-radius: 14px;
+  border: 1px solid #dcd8ce;
+  border-radius: 12px;
   padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
 .field-group { margin-bottom: 20px; }
@@ -199,6 +209,10 @@ input[type="range"]:focus { outline: none; }
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
+  margin-top: 10px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
 }
 .viability.green  { background: #e8f3e2; color: #27500a; }
 .viability.yellow { background: #faeeda; color: #633806; }
@@ -309,11 +323,13 @@ input[type="range"]:focus { outline: none; }
   border: 1px solid #d3d1c7;
   border-radius: 12px;
   background: #fbfaf6;
-  overflow: hidden;
+  position: relative;
 }
 .offer-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0,1fr));
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
 }
 .offer-cell {
   padding: 13px 10px;
@@ -340,6 +356,8 @@ input[type="range"]:focus { outline: none; }
   line-height: 1.5;
   color: #5f5e5a;
   background: #fff;
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
 }
 .offer-note b { color: #2c2c2a; }
 .offer-note.warn { background: #fcf3e8; color: #633806; }
