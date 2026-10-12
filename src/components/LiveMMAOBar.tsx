@@ -195,11 +195,11 @@ export const LiveMMAOBar: React.FC<LiveMMAOBarProps> = ({
           }}
         >
           <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span>Anchor (70%)</span>
+            <span>Anchor (75%)</span>
             <InfoTip
-              title="Anchor Offer (70% of MMAO)"
-              eli12="Your aggressive lowball opening bid! Start here in negotiations so you have room to give in a little and make the seller feel like they won. If the seller accepts right away, you pocket a massive windfall bonus!"
-              formula="MMAO × 0.70"
+              title="Anchor Offer (75% of MMAO)"
+              eli12="Your aggressive but realistic opening bid! Start here so you have room to negotiate up and still leave the seller feeling like they won something. If they accept immediately, you have extra margin."
+              formula="MMAO × 0.75"
               ruleOfThumb="Always make an anchor offer first. Never start at your maximum offer!"
               example={`If MMAO is ${money(breakdown.mao70)}, start at ${money(breakdown.anchor)}.`}
               size="sm"
@@ -222,11 +222,11 @@ export const LiveMMAOBar: React.FC<LiveMMAOBarProps> = ({
           }}
         >
           <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span>Target (85%)</span>
+            <span>Target (90%)</span>
             <InfoTip
-              title="Target Offer (85% of MMAO)"
-              eli12="The realistic sweet spot! Where most profitable deals end up closing after some back-and-forth negotiation. This gives you your full desired fee while giving the flipper great margin."
-              formula="MMAO × 0.85"
+              title="Target Offer (90% of MMAO)"
+              eli12="The realistic sweet spot where most profitable wholesale deals actually close after negotiation. Protects your full fee while still looking good to the cash buyer."
+              formula="MMAO × 0.90"
               ruleOfThumb="If the seller hesitates on your Anchor offer, walk up gradually to this Target number."
               example={`Target price is ${money(breakdown.target)}.`}
               size="sm"
