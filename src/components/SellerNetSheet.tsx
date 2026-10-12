@@ -108,7 +108,7 @@ export const SellerNetSheet: React.FC<SellerNetSheetProps> = ({
             </div>
             <div className="detail-row">
               <span className="lbl">Mortgage payoff</span>
-              <span className="val">-{money(payoff)}</span>
+              <span className="val">-{money(effectivePayoff)}</span>
             </div>
             <div className="detail-row">
               <span className="lbl">Liens / back taxes</span>
