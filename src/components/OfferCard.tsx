@@ -23,7 +23,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ range, title }) => {
             <InfoTip
               title="Anchor Offer (Opening Bid)"
               eli12="Your opening bid to the seller! Start here so you have plenty of room to negotiate upward. If they accept immediately, you make huge bonus cash."
-              ruleOfThumb="Usually 80% of MMAO or 20% below asking price."
+              ruleOfThumb="Usually ~70% of MMAO (aggressive lowball) so you have room to negotiate up."
               example={range.anchor !== null ? `Start negotiation at ${money(range.anchor)}.` : undefined}
               size="sm"
               placement="bottom"
@@ -37,8 +37,8 @@ export const OfferCard: React.FC<OfferCardProps> = ({ range, title }) => {
             <span>Target (Sweet Spot)</span>
             <InfoTip
               title="Target Offer (Sweet Spot)"
-              eli12="The realistic price where 80% of wholesale contracts actually get signed. Gives you your full desired wholesale fee and leaves enough meat on the bone for your cash buyer."
-              ruleOfThumb="Walk up slowly from your Anchor toward this Target."
+              eli12="The realistic price where most wholesale contracts actually get signed. Gives you your full desired wholesale fee and leaves enough meat on the bone for your cash buyer."
+              ruleOfThumb="Walk up slowly from your Anchor toward this Target (~85% of MMAO)."
               example={range.target !== null ? `Aim to close at ${money(range.target)}.` : undefined}
               size="sm"
               placement="bottom"
@@ -69,4 +69,3 @@ export const OfferCard: React.FC<OfferCardProps> = ({ range, title }) => {
     </div>
   );
 };
-
