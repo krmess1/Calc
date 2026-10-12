@@ -74,10 +74,8 @@ export function calcDSCROffer(v: DSCRInputs): OfferRange {
     };
   }
 
-  // FIXED: Anchor should be more aggressive (lower) than target
-  // Anchor: 70% of target (or 65% of MAO if no target)
-  // Target: 85% of MAO
-  const anchor = target !== null && target > 0 ? target * 0.70 : mao * 0.65;
+  // Real-world: Anchor ~75% of max viable price, Target ~90% so deals actually get signed
+  const anchor = target !== null && target > 0 ? Math.round(target * 0.75) : Math.round(mao * 0.70);
   const over = v.purchase - mao;
 
   if (over > 0) {
@@ -85,7 +83,7 @@ export function calcDSCROffer(v: DSCRInputs): OfferRange {
       anchor,
       target,
       mao,
-      note: `You are <b>${money(over)} over</b> your max. Lenders underwrite to DSCR, and at ${money(v.purchase)} this loan does not clear 1.25. Come down to ${money(mao)} or the deal has no exit.[...]
+      note: `You are <b>${money(over)} over</b> your max. Lenders underwrite to DSCR, and at ${money(v.purchase)} this loan does not clear 1.25. Come down to ${money(mao)} or the deal has no exit.`,
       status: 'warn'
     };
   } else if (mao > v.purchase * 1.15) {
@@ -93,7 +91,7 @@ export function calcDSCROffer(v: DSCRInputs): OfferRange {
       anchor,
       target,
       mao,
-      note: `Careful with this one. The numbers clear well above your price, which means <b>cash flow is no longer your constraint — market value is</b>, and this calculator does not know what t[...]
+      note: `Careful with this one. The numbers clear well above your price, which means <b>cash flow is no longer your constraint — market value is</b>, and this calculator does not know what the house will actually appraise for.`,
       status: 'warn'
     };
   }
@@ -145,7 +143,7 @@ export function calcSFOffer(v: SFInputs): OfferRange {
       anchor: null,
       target: null,
       mao: null,
-      note: `The balloon does not refinance at these terms — and that is <b>not a price problem</b>. The payoff and future value both scale with price. Stretch the balloon past ${v.balloon} yea[...]
+      note: `The balloon does not refinance at these terms — and that is <b>not a price problem</b>. The payoff and future value both scale with price. Stretch the balloon past ${v.balloon} years or lower the rate.`,
       status: 'bad'
     };
   }
@@ -166,10 +164,7 @@ export function calcSFOffer(v: SFInputs): OfferRange {
     };
   }
 
-  // FIXED: Anchor should be more aggressive (lower) than target
-  // Anchor: 70% of target (or 65% of MAO if no target)
-  // Target: 85% of MAO
-  const anchor = target !== null && target > 0 ? target * 0.70 : mao * 0.65;
+  const anchor = target !== null && target > 0 ? Math.round(target * 0.75) : Math.round(mao * 0.70);
   const over = v.purchase - mao;
 
   if (over > 0) {
@@ -177,7 +172,7 @@ export function calcSFOffer(v: SFInputs): OfferRange {
       anchor,
       target,
       mao,
-      note: `At ${money(v.purchase)} you are feeding this deal every month. <b>${money(mao)}</b> is break-even at ${v.rate}%. Try asking for a lower rate — that moves the same number without co[...]
+      note: `At ${money(v.purchase)} you are feeding this deal every month. <b>${money(mao)}</b> is break-even at ${v.rate}%. Try asking for a lower rate — that moves the same number without cutting price.`,
       status: 'warn'
     };
   } else if (mao > v.purchase * 1.15) {
@@ -185,7 +180,7 @@ export function calcSFOffer(v: SFInputs): OfferRange {
       anchor,
       target,
       mao,
-      note: `At ${v.rate}% over ${v.amort}-year amort the payment is tiny, so cash flow stays positive far above your price. <b>Cash flow is not your ceiling here. Market value is</b>, and this t[...]
+      note: `At ${v.rate}% over ${v.amort}-year amort the payment is tiny, so cash flow stays positive far above your price. <b>Cash flow is not your ceiling here. Market value is</b>.`,
       status: 'warn'
     };
   }
@@ -244,11 +239,10 @@ export function calcSTOffer(v: STInputs): OfferRange {
     };
   }
 
+  // Real-world Sub-to: keep cash to seller modest. 15% CoC = MAO, 25% CoC = Target
   const mao = Math.max((r.cf * 12) / 0.15 - v.fee, 0);
   const target = Math.max((r.cf * 12) / 0.25 - v.fee, 0);
-  // FIXED: Anchor should be more aggressive (lower) than target
-  // Anchor: 70% of target (or 65% of MAO if no target)
-  const anchor = target > 0 ? target * 0.70 : mao * 0.65;
+  const anchor = target > 0 ? Math.round(target * 0.75) : Math.round(mao * 0.70);
   const over = v.cash - mao;
 
   if (over > 0) {
@@ -265,7 +259,7 @@ export function calcSTOffer(v: STInputs): OfferRange {
     anchor,
     target,
     mao,
-    note: `These are <b>cash to the seller</b>, not purchase price. You are capturing ${money(r.equity)} of equity and a ${v.rate}% loan you could not get today. Keep cash small and the return ta[...]
+    note: `These are <b>cash to the seller</b>, not purchase price. You are capturing ${money(r.equity)} of equity and a ${v.rate}% loan you could not get today. Keep cash small and the return stays strong.`,
     status: 'good'
   };
 }
@@ -297,14 +291,14 @@ export function atFF(P: number, v: FFInputs) {
 }
 
 export function calcMMAOBreakdown(arv: number, rehab: number, fee: number, purchase: number) {
+  // Standard 70% rule for most flips. Use 65% for heavy rehabs, 75% for light cosmetic.
   const mao70 = arv * 0.70 - rehab - fee;
   const mao75 = arv * 0.75 - rehab - fee;
   const mao80 = arv * 0.80 - rehab - fee;
-  // FIXED: Anchor should be more aggressive (lower) than target
-  // Anchor: 70% of MAO (aggressive opening)
-  // Target: 85% of MAO (realistic negotiation target)
-  const anchor = Math.round((mao70 * 0.70) / 500) * 500;
-  const target = Math.round((mao70 * 0.85) / 500) * 500;
+  // Real-world negotiation: Anchor ~75% of MAO (aggressive but not ridiculous),
+  // Target ~90% of MAO (where most deals actually close after back-and-forth).
+  const anchor = Math.round((mao70 * 0.75) / 500) * 500;
+  const target = Math.round((mao70 * 0.90) / 500) * 500;
   const spread = mao70 - purchase; // positive means under MAO (safe wholesale cushion)
 
   return {
@@ -319,7 +313,7 @@ export function calcMMAOBreakdown(arv: number, rehab: number, fee: number, purch
 }
 
 export function calcFFOffer(v: FFInputs): OfferRange {
-  // Wholesale MAO: Jerry Norton 70% rule minus rehab minus assignment fee!
+  // Wholesale MAO: Jerry Norton 70% rule minus rehab minus assignment fee
   // MAO = (ARV x 70%) - Rehab - Fee
   const mao70 = v.arv * 0.70 - v.rehab - v.fee;
   const mao = Math.round(mao70);
@@ -329,15 +323,14 @@ export function calcFFOffer(v: FFInputs): OfferRange {
       anchor: null,
       target: null,
       mao: null,
-      note: `Rehab is <b>${money(v.rehab)}</b> against a ${money(v.arv)} ARV. At the 70% wholesale rule, the MMAO is $0 or negative — ARV is too low or rehab scope is too large.`,
+      note: `Rehab is <b>${money(v.rehab)}</b> against a ${money(v.arv)} ARV. At the 70% wholesale rule, the MMAO is $0 or negative — ARV is too low or rehab scope is too large. Consider 65% rule for heavy rehabs or walk.`,
       status: 'bad'
     };
   }
 
-  // FIXED: Anchor is aggressive opening offer: 70% of MAO (was 80%)
-  // Target is realistic negotiation target: 85% of MAO (was 90%)
-  const anchor = Math.round((mao * 0.70) / 500) * 500;
-  const target = Math.round((mao * 0.85) / 500) * 500;
+  // Real-world: Anchor 75% of MAO, Target 90% of MAO
+  const anchor = Math.round((mao * 0.75) / 500) * 500;
+  const target = Math.round((mao * 0.90) / 500) * 500;
 
   const over = v.purchase - mao;
 
@@ -346,7 +339,7 @@ export function calcFFOffer(v: FFInputs): OfferRange {
       anchor,
       target,
       mao,
-      note: `You are <b>${money(over)} OVER</b> your 70% Wholesale MMAO (${money(mao)}). You must negotiate purchase price down to <b>${money(mao)}</b> to protect your ${money(v.fee)} assignment [...]
+      note: `You are <b>${money(over)} OVER</b> your 70% Wholesale MMAO (${money(mao)}). You must negotiate purchase price down to <b>${money(mao)}</b> to protect your ${money(v.fee)} assignment fee. Cash buyers will pass above this.`,
       status: 'warn'
     };
   }
@@ -355,7 +348,7 @@ export function calcFFOffer(v: FFInputs): OfferRange {
     anchor,
     target,
     mao,
-    note: `You are <b>${money(Math.abs(over))} UNDER</b> your 70% Wholesale MMAO (${money(mao)}). Anchor opening offer at <b>${money(anchor)}</b>, work up toward Target (<b>${money(target)}</b>),[...]
+    note: `You are <b>${money(Math.abs(over))} UNDER</b> your 70% Wholesale MMAO (${money(mao)}). Anchor opening offer at <b>${money(anchor)}</b>, work up toward Target (<b>${money(target)}</b>), and never cross MMAO.`,
     status: 'good'
   };
 }
@@ -374,7 +367,6 @@ export function atDoubleClose(v: DoubleCloseInputs) {
   const btocTotal = btocPctCost + v.btocTitleFlat;
 
   // Transactional Funding Loan (Same-day Flash Loan to fund A-B acquisition)
-  // Loan amount equals A-B purchase price plus closing costs if financed
   const transLoanAmount = v.purchasePrice + atobTotal;
   const transFundingFee = (transLoanAmount * v.transFundingPct) / 100 + v.transFundingFlat;
 
@@ -409,8 +401,6 @@ export function atDoubleClose(v: DoubleCloseInputs) {
 }
 
 export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: number = 10000): OfferRange {
-  // FIXED: Use actual calculated friction instead of estimate
-  // Create a temporary inputs object for friction calculation
   const dcCalc = atDoubleClose(v);
   const actualFriction = dcCalc.totalDeductions;
 
@@ -427,10 +417,8 @@ export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: n
     };
   }
 
-  // FIXED: Anchor is aggressive opening offer: 70% of MAO (was 85%)
-  // Target is realistic negotiation target: 85% of MAO (was 95%)
-  const anchor = Math.round((mao * 0.70) / 500) * 500;
-  const target = Math.round((mao * 0.85) / 500) * 500;
+  const anchor = Math.round((mao * 0.75) / 500) * 500;
+  const target = Math.round((mao * 0.90) / 500) * 500;
   const over = v.purchasePrice - mao;
 
   if (over > 0) {
@@ -438,7 +426,7 @@ export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: n
       anchor,
       target,
       mao,
-      note: `You are <b>${money(over)} OVER</b> Double Close MMAO (${money(mao)}). With 2 sets of closing costs and transactional funding, your net fee will be pinched. Negotiate A-B price down t[...]
+      note: `You are <b>${money(over)} OVER</b> Double Close MMAO (${money(mao)}). With 2 sets of closing costs and transactional funding, your net fee will be pinched. Negotiate A-B price down to protect your take-home.`,
       status: 'warn',
     };
   }
@@ -447,7 +435,7 @@ export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: n
     anchor,
     target,
     mao,
-    note: `You are <b>${money(Math.abs(over))} UNDER</b> Double Close MMAO (${money(mao)}). Anchor opening offer at <b>${money(anchor)}</b>, work up toward Target (<b>${money(target)}</b>), and d[...]
+    note: `You are <b>${money(Math.abs(over))} UNDER</b> Double Close MMAO (${money(mao)}). Anchor opening offer at <b>${money(anchor)}</b>, work up toward Target (<b>${money(target)}</b>). Only double-close when net after friction is still solid (≥$8k–$10k).`,
     status: 'good',
   };
 }
