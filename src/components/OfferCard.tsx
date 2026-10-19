@@ -23,7 +23,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ range, title }) => {
             <InfoTip
               title="Anchor Offer (Opening Bid)"
               eli12="Your opening bid to the seller! Start here so you have plenty of room to negotiate upward. If they accept immediately, you make huge bonus cash."
-              ruleOfThumb="Usually ~75% of MMAO (aggressive but realistic lowball) so you have room to negotiate up."
+              ruleOfThumb="75% of MMAO on every strategy (aggressive but realistic) so you have room to negotiate up."
               example={range.anchor !== null ? `Start negotiation at ${money(range.anchor)}.` : undefined}
               size="sm"
               placement="bottom"
@@ -38,7 +38,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ range, title }) => {
             <InfoTip
               title="Target Offer (Sweet Spot)"
               eli12="The realistic price where most wholesale contracts actually get signed. Gives you your full desired wholesale fee and leaves enough meat on the bone for your cash buyer."
-              ruleOfThumb="Walk up slowly from your Anchor toward this Target (~90% of MMAO)."
+              ruleOfThumb="Flip & Double Close: 90% of MMAO. DSCR / Seller Finance / Sub-To: the highest number that still hits the return goal (20%+ CoC, or 25% CoC on sub-to cash) — it can sit below the Anchor when the goal is strict."
               example={range.target !== null ? `Aim to close at ${money(range.target)}.` : undefined}
               size="sm"
               placement="bottom"

@@ -20,6 +20,9 @@ export function balanceAfter(principal: number, annualRatePct: number, amortMont
   return Math.max(bal, 0);
 }
 
+export const ANCHOR_PCT = 0.75;
+export const TARGET_PCT = 0.90;
+
 const PRICE_LO = 1000;
 const PRICE_HI = 4000000;
 
@@ -75,7 +78,8 @@ export function calcDSCROffer(v: DSCRInputs): OfferRange {
   }
 
   // Real-world: Anchor ~75% of max viable price, Target ~90% so deals actually get signed
-  const anchor = target !== null && target > 0 ? Math.round(target * 0.75) : Math.round(mao * 0.70);
+  // Anchor is always 75% of MMAO (same base as Flip/Double Close) so it never jumps when Target is unreachable.
+  const anchor = Math.round(mao * ANCHOR_PCT);
   const over = v.purchase - mao;
 
   if (over > 0) {
@@ -164,7 +168,8 @@ export function calcSFOffer(v: SFInputs): OfferRange {
     };
   }
 
-  const anchor = target !== null && target > 0 ? Math.round(target * 0.75) : Math.round(mao * 0.70);
+  // Anchor is always 75% of MMAO (same base as Flip/Double Close) so it never jumps when Target is unreachable.
+  const anchor = Math.round(mao * ANCHOR_PCT);
   const over = v.purchase - mao;
 
   if (over > 0) {
@@ -264,7 +269,11 @@ export function calcSTOffer(v: STInputs): OfferRange {
   };
 }
 
-// Fix & Flip calculation (Jerry Norton Wholesaler MAO fix: deduct fee from seller offer)
+// Fix & Flip calculation.
+// P is ALWAYS the seller contract price (what you pay the seller). The end buyer's
+// entry price is P + assignment fee, and the MAO compared against P already deducts the fee:
+//   MAO (seller contract) = ARV x 70% - rehab - fee   <=>   end-buyer entry <= ARV x 70% - rehab
+// Do not enter a fee-reduced price here, or the fee will be counted twice.
 export function atFF(P: number, v: FFInputs) {
   const holding = v.hold * v.months;
   const entryPrice = P + (v.fee || 0); // Cash to close / buyer contract entry price
@@ -297,8 +306,8 @@ export function calcMMAOBreakdown(arv: number, rehab: number, fee: number, purch
   const mao80 = arv * 0.80 - rehab - fee;
   // Real-world negotiation: Anchor ~75% of MAO (aggressive but not ridiculous),
   // Target ~90% of MAO (where most deals actually close after back-and-forth).
-  const anchor = Math.round((mao70 * 0.75) / 500) * 500;
-  const target = Math.round((mao70 * 0.90) / 500) * 500;
+  const anchor = Math.round((mao70 * ANCHOR_PCT) / 500) * 500;
+  const target = Math.round((mao70 * TARGET_PCT) / 500) * 500;
   const spread = mao70 - purchase; // positive means under MAO (safe wholesale cushion)
 
   return {
@@ -329,8 +338,8 @@ export function calcFFOffer(v: FFInputs): OfferRange {
   }
 
   // Real-world: Anchor 75% of MAO, Target 90% of MAO
-  const anchor = Math.round((mao * 0.75) / 500) * 500;
-  const target = Math.round((mao * 0.90) / 500) * 500;
+  const anchor = Math.round((mao * ANCHOR_PCT) / 500) * 500;
+  const target = Math.round((mao * TARGET_PCT) / 500) * 500;
 
   const over = v.purchase - mao;
 
@@ -400,7 +409,7 @@ export function atDoubleClose(v: DoubleCloseInputs) {
   };
 }
 
-export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: number = 10000): OfferRange {
+export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: number): OfferRange {
   const dcCalc = atDoubleClose(v);
   const actualFriction = dcCalc.totalDeductions;
 
@@ -412,13 +421,15 @@ export function calcDoubleCloseOffer(v: DoubleCloseInputs, targetWholesaleFee: n
       anchor: null,
       target: null,
       mao: null,
-      note: 'End buyer price is not set. Enter the cash buyer exit price to calculate your Double Close offer ceiling.',
+      note: v.endBuyerPrice <= 0
+        ? 'End buyer price is not set. Enter the cash buyer exit price to calculate your Double Close offer ceiling.'
+        : `After your ${money(targetWholesaleFee)} fee and ${money(actualFriction)} of closing/funding friction, there is no room left under the end buyer price.`,
       status: 'bad',
     };
   }
 
-  const anchor = Math.round((mao * 0.75) / 500) * 500;
-  const target = Math.round((mao * 0.90) / 500) * 500;
+  const anchor = Math.round((mao * ANCHOR_PCT) / 500) * 500;
+  const target = Math.round((mao * TARGET_PCT) / 500) * 500;
   const over = v.purchasePrice - mao;
 
   if (over > 0) {
