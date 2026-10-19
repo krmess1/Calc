@@ -14,6 +14,8 @@ import {
 } from './utils/calc';
 import { Splash } from './components/Splash';
 import { RangeInput } from './components/RangeInput';
+import { CloserChecklist } from './components/CloserChecklist';
+import { sfCloserChecks, stCloserChecks } from './utils/criteria';
 import { OfferCard } from './components/OfferCard';
 import { SellerNetSheet } from './components/SellerNetSheet';
 import { RehabChecklist } from './components/RehabChecklist';
@@ -1118,6 +1120,7 @@ export default function App() {
               })()}
 
               <OfferCard range={sfOffer} />
+              <CloserChecklist title="Offer Oven closer check (Seller Finance)" checks={sfCloserChecks(sf)} />
 
               <button
                 type="button"
@@ -1565,6 +1568,7 @@ export default function App() {
               })()}
 
               <OfferCard range={stOffer} />
+              <CloserChecklist title="Offer Oven closer check (Subject-To)" checks={stCloserChecks(st)} />
 
               <button
                 type="button"
@@ -1823,7 +1827,7 @@ export default function App() {
             <div className="calc-box">
               <RangeInput
                 id="ff-purchase"
-                label="Purchase Price"
+                label="Seller Contract Price"
                 value={property.purchasePrice}
                 min={0}
                 max={900000}
